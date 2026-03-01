@@ -30,7 +30,7 @@ curl -s "https://api.telegra.ph/createAccount" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['result']['access_token'])"
 ```
 
-Store it as `TELEGRAPH_ACCESS_TOKEN` env var, or pass via `--token`, or use a YAML config with `--config`.
+Store it as `TELEGRAPH_ACCESS_TOKEN` env var, or pass via `--token`.
 
 ## How to Publish
 
@@ -60,5 +60,4 @@ Headers (`#`, `##`, `###`), **bold**, *italic*, `inline code`, code blocks, unor
 
 ## Dependencies
 
-- Python 3.6+ standard library
-- `pyyaml` only if using `--config` for token
+- Python 3.6+ standard library (zero external dependencies)

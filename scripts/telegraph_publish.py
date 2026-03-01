@@ -14,7 +14,6 @@ Usage:
 Token sources (priority):
 1) --token argument
 2) TELEGRAPH_ACCESS_TOKEN environment variable
-3) Config file (default: ~/.hal/secrets.yaml)
 """
 
 import argparse
@@ -26,7 +25,7 @@ import urllib.request
 from pathlib import Path
 
 
-def load_token(cli_token: str | None = None, config_path: str | None = None) -> str:
+def load_token(cli_token: str | None = None) -> str:
     if cli_token:
         return cli_token
 
@@ -34,41 +33,13 @@ def load_token(cli_token: str | None = None, config_path: str | None = None) -> 
     if env_token:
         return env_token
 
-    if not config_path:
-        print(
-            "Error: No token found. Provide --token, set TELEGRAPH_ACCESS_TOKEN, or specify --config.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    config_file = Path(config_path).expanduser()
-    try:
-        import yaml
-    except ImportError:
-        print(
-            "Error: PyYAML is required only when loading token from config file. "
-            "Install with: pip install pyyaml, or use --token / TELEGRAPH_ACCESS_TOKEN.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    try:
-        with open(config_file, encoding="utf-8") as f:
-            secrets = yaml.safe_load(f)
-        return secrets["services"]["telegraph"]["access_token"]
-    except FileNotFoundError:
-        print(
-            f"Error: Config file not found: {config_file}. "
-            "Provide --token or set TELEGRAPH_ACCESS_TOKEN.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    except Exception as e:
-        print(
-            f"Error: Could not load token from config file {config_file}: {e}. "
-            "Provide --token or set TELEGRAPH_ACCESS_TOKEN.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    print(
+        "Error: No token found. Provide --token or set TELEGRAPH_ACCESS_TOKEN.\n"
+        "Register one with: curl -s https://api.telegra.ph/createAccount "
+        '-d "short_name=my-agent" -d "author_name=Agent"',
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def md_to_telegraph_nodes(md_text: str) -> list:
@@ -197,8 +168,8 @@ def ensure_children(result):
     return [r]
 
 
-def publish(title: str, content: str, author_name: str = "Agent", author_url: str | None = None, token: str | None = None, config_path: str | None = None) -> str:
-    access_token = load_token(cli_token=token, config_path=config_path)
+def publish(title: str, content: str, author_name: str = "Agent", author_url: str | None = None, token: str | None = None) -> str:
+    access_token = load_token(cli_token=token)
     nodes = md_to_telegraph_nodes(content)
 
     payload = {
@@ -235,7 +206,6 @@ def main():
     parser.add_argument("--author", default="Agent", help="Author name")
     parser.add_argument("--author-url", help="Author URL")
     parser.add_argument("--token", help="Telegraph access token")
-    parser.add_argument("--config", help="Config file path for token fallback (YAML, expects services.telegraph.access_token)")
     args = parser.parse_args()
 
     if args.file:
@@ -245,7 +215,7 @@ def main():
     else:
         content = sys.stdin.read()
 
-    url = publish(args.title, content, args.author, args.author_url, args.token, args.config)
+    url = publish(args.title, content, args.author, args.author_url, args.token)
     print(url)
 
 

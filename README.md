@@ -33,7 +33,6 @@ Pick one (checked in this order):
 |--------|-----|
 | CLI argument | `--token YOUR_TOKEN` |
 | Environment variable | `export TELEGRAPH_ACCESS_TOKEN=YOUR_TOKEN` |
-| YAML config file | `--config path/to/secrets.yaml` (expects `services.telegraph.access_token`) |
 
 The env var is the simplest for most agent setups.
 
@@ -80,13 +79,12 @@ Zero framework dependencies. Just Python 3.
 --content      Pass content as a string argument
 --author       Author name (default: "Agent")
 --author-url   Author profile URL
---token        Telegraph access token (overrides env/config)
---config       Path to YAML config file for token
+--token        Telegraph access token (overrides env)
 ```
 
 **Input priority**: `--file` > `--content` > stdin
 
-**Token priority**: `--token` > `TELEGRAPH_ACCESS_TOKEN` env > `--config` file
+**Token priority**: `--token` > `TELEGRAPH_ACCESS_TOKEN` env
 
 ## Supported Markdown
 
@@ -96,8 +94,7 @@ Covers what most agents produce. No images or tables (Telegraph limitation).
 
 ## Dependencies
 
-- Python 3.6+
-- `pyyaml` — only if using `--config` for token. Not needed with `--token` or env var.
+- Python 3.6+ standard library (zero external dependencies)
 
 ## License
 
