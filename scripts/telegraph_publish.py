@@ -42,6 +42,55 @@ def load_token(cli_token: str | None = None) -> str:
     sys.exit(1)
 
 
+def table_to_pre(table_lines: list[str]) -> str:
+    """Convert markdown table lines into a cleanly aligned plain-text table for <pre> rendering.
+
+    Parses the cells, calculates column widths, and re-renders with consistent spacing.
+    Falls back to raw lines if parsing fails."""
+    try:
+        # Parse rows, skip separator line (|---|---|)
+        rows = []
+        for line in table_lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            # Skip separator rows like |---|---|
+            if re.match(r"^\|[\s\-:|]+\|$", stripped):
+                continue
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            rows.append(cells)
+
+        if not rows:
+            return "\n".join(table_lines)
+
+        # Determine column count from header row
+        n_cols = len(rows[0])
+        # Normalize all rows to same column count
+        for r in rows:
+            while len(r) < n_cols:
+                r.append("")
+
+        # Calculate max width per column
+        col_widths = [0] * n_cols
+        for r in rows:
+            for j in range(n_cols):
+                col_widths[j] = max(col_widths[j], len(r[j]))
+
+        # Render aligned rows
+        output_lines = []
+        for idx, r in enumerate(rows):
+            rendered = "  ".join(r[j].ljust(col_widths[j]) for j in range(n_cols))
+            output_lines.append(rendered)
+            # Add separator after header row
+            if idx == 0:
+                sep = "  ".join("-" * col_widths[j] for j in range(n_cols))
+                output_lines.append(sep)
+
+        return "\n".join(output_lines)
+    except Exception:
+        return "\n".join(table_lines)
+
+
 def md_to_telegraph_nodes(md_text: str) -> list:
     """Convert markdown to Telegraph Node format (simplified but covers common cases)."""
     nodes = []
@@ -58,6 +107,15 @@ def md_to_telegraph_nodes(md_text: str) -> list:
             nodes.append({"tag": "h3", "children": ensure_children(inline_format(line[3:]))})
         elif line.startswith("# "):
             nodes.append({"tag": "h3", "children": ensure_children(inline_format(line[2:]))})
+
+        # Markdown tables → <pre> block
+        elif re.match(r"^\s*\|", line):
+            table_lines = []
+            while i < len(lines) and re.match(r"^\s*\|", lines[i]):
+                table_lines.append(lines[i])
+                i += 1
+            nodes.append({"tag": "pre", "children": [table_to_pre(table_lines)]})
+            continue  # skip i increment at bottom
 
         # Code blocks
         elif line.startswith("```"):
